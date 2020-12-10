@@ -1,0 +1,15 @@
+
+Version 1.1.0 (2020-11-18)
+--------------------------
+- Decoupled Comcast implementation from the Core-Snowplow SDK.
+  - see herer -> https://github.com/thedatasherpas/snowplow-android-tracker
+- Introduced a schema-validator-- takes a custom v3/v4 draft schema string and the json string.
+  - Validation is currently done after the payload has been processed by the Snowplow SDK.
+- Simplified the tracker initialization ( init( context, delegate, host)
+- Simplified Global property setters 
+- Improved Demo app to display a Toast when an Emitter attempt is made.
+- Code stabilization/ bug fixes
+- Added/verified offline pooling capabilities (tracker queries the DB periodically for cached events)
+
+--------------------------
+Initial release (Version 1.0.0)
