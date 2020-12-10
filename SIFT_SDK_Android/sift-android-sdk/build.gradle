@@ -1,0 +1,165 @@
+plugins {
+    id "com.jfrog.bintray" version "1.5"
+}
+
+plugins {
+    id 'digital.wup.android-maven-publish' version '3.6.2'
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'jacoco'
+apply plugin: 'maven-publish'
+//apply plugin: 'com.github.kt3k.coveralls'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
+
+
+jacoco {
+    toolVersion = "0.8.5"
+}
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion "29.0.3"
+
+    useLibrary 'android.test.base'
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 29
+
+        versionCode 1
+        versionName "$project.version"
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField "String", "TRACKER_LABEL", "\"andr-$project.version\""
+            buildConfigField "String", "TRACKER_VERSION", "\"$project.version\""
+
+            testCoverageEnabled = true
+        }
+        release {
+            buildConfigField "String", "TRACKER_LABEL", "\"andr-$project.version\""
+            buildConfigField "String", "TRACKER_VERSION", "\"$project.version\""
+
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    packagingOptions {
+        pickFirst 'lib/armeabi-v7a/libassmidi.so'
+        pickFirst 'lib/x86/libassmidi.so'
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/license.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/notice.txt'
+        exclude 'META-INF/ASL-2.0.txt'
+        exclude 'META-INF/ASL2.0'
+        exclude("META-INF/*.kotlin_module")
+    }
+
+    lintOptions {
+        disable 'InvalidPackage'
+        abortOnError false
+    }
+
+    sourceSets {
+        androidTest.manifest.srcFile "src/androidTest/AndroidManifest.xml"
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    // This enables long timeouts required on slow environments
+    adbOptions {
+        timeOutInMs 10 * 60 * 1000  // Set the timeout to 10 minutes
+        installOptions "-d","-t"
+    }
+}
+
+dependencies {
+    implementation 'com.android.support:support-annotations:28.0.0'
+
+    api('com.comcast.snowplow:snowplow-android-tracker:1.0.0@aar')
+    api("android.arch.lifecycle:extensions:1.1.1")
+    api("com.github.java-json-tools:json-schema-validator:2.2.14")
+    api('com.google.code.gson:gson:2.8.5')
+    api('com.squareup.okhttp3:okhttp:4.9.0')
+    api("com.squareup.okhttp3:logging-interceptor:4.9.0")
+
+    implementation "androidx.core:core-ktx:1.3.2"
+    //noinspection GradleDependency
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+}
+
+def prop(String name) {
+    project.hasProperty(name) ? project.getProperty(name) : null
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.all
+                groupId 'com.comcast.siftandroidsdk'
+                version '1.1.0'
+                artifactId 'sift-android-sdk'
+                artifact("$buildDir/outputs/aar/sift-android-sdk-release.aar")
+
+                versionMapping {
+                    usage('java-runtime') {
+                        fromResolutionResult()
+                    }
+                }
+                pom {
+                    name = 'SIFT Android SDK'
+                    description = 'The Sift Android Sdk.'
+                    url = 'https://github.comcast.com/ProductAnalyticsBehaviorScience/sift-android-sdk'
+                    packaging = 'aar'
+                    scm {
+                        connection = 'https://github.comcast.com/ProductAnalyticsBehaviorScience/sift-android-sdk'
+                        developerConnection = 'https://github.comcast.com/ProductAnalyticsBehaviorScience/sift-android-sdk'
+                        url = 'https://github.comcast.com/ProductAnalyticsBehaviorScience/sift-android-sdk'
+                    }
+                }
+            }
+        }
+        repositories {
+            maven {
+                credentials {
+                    username = prop("nexusUsername")
+                    password = prop("nexusPassword")
+                }
+                def releasesRepoUrl = "https://nexus.comcast.com/nexus/content/repositories/hosted-pabs-releases"
+                def snapshotsRepoUrl = "https://nexus.comcast.com/nexus/content/repositories/hosted-pabs-snapshots"
+                url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            }
+        }
+    }
+}
+
+android.libraryVariants.all { variant ->
+    task("generate${variant.name.capitalize()}Javadoc", type: Javadoc) {
+        title = "Documentation for SIFT Android Sdk $version"
+        description "Generates Javadoc for $variant.name."
+        source = variant.getJavaCompileProvider().get().source
+        ext.androidJar = "${android.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
+        doFirst { classpath = files(variant.javaCompiler.classpath.files) + files(ext.androidJar) }
+        options.links("http://docs.oracle.com/javase/7/docs/api/")
+        exclude '**/R.java'
+        println("$project.version")
+    }
+}
+
+//coveralls {
+//    jacocoReportPath "$buildDir/reports/coverage/debug/report.xml"
+//}

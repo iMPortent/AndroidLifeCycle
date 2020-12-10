@@ -1,0 +1,3 @@
+include ':sift-android-sdk'
+include ':sift-android-sdk', ':demo'
+project(":sift-android-sdk").name = "sift-android-sdk"

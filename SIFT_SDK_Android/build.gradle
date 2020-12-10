@@ -1,0 +1,36 @@
+ext {
+    appName = "SIFT_SDK_ANDROID"
+}
+
+buildscript {
+    ext.kotlin_version = '1.4.10'
+    repositories {
+        google()
+        mavenLocal()
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:4.0.1'
+//        classpath "gradle.plugin.org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.10.1"
+//        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+subprojects {
+    group = 'com.siftandroidsdk'
+    version = '1.0.0'
+    repositories {
+        google()
+        mavenLocal()
+        jcenter()
+        maven {
+            url "https://nexus.comcast.com/nexus/content/repositories/hosted-pabs-releases"
+        }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
